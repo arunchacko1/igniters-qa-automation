@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EventList",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title", "description", "eventDate", "location", "capacity", "remainingCapacity"],
+    "properties": {
+      "id": { "type": "integer" },
+      "title": { "type": "string" },
+      "description": { "type": "string" },
+      "eventDate": { "type": "string" },
+      "location": { "type": "string" },
+      "capacity": { "type": "integer" },
+      "remainingCapacity": { "type": "integer" },
+      "createdAt": { "type": ["string", "null"] }
+    }
+  }
+}

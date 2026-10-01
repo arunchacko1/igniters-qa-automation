@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Registration",
+  "type": "object",
+  "required": ["id", "eventId", "eventTitle", "eventDate", "registeredAt"],
+  "properties": {
+    "id": { "type": "integer" },
+    "eventId": { "type": "integer" },
+    "eventTitle": { "type": "string" },
+    "eventDate": { "type": "string" },
+    "registeredAt": { "type": "string" }
+  }
+}
