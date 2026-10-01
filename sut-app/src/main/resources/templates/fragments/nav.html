@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="nav" data-testid="nav-bar">
+    <a th:href="@{/events}" data-testid="nav-events-link">Igniters Events</a>
+    <span th:if="${currentUserName}" th:text="${currentUserName}" data-testid="nav-current-user"></span>
+    <a th:if="${isAdmin}" th:href="@{/admin/events/new}" data-testid="nav-create-event-link">Create Event</a>
+    <form th:action="@{/logout}" method="post" style="display:inline; margin-left:auto">
+        <button type="submit" data-testid="logout-button">Logout</button>
+    </form>
+</header>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Event Form - Igniters</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+<main>
+    <h1>Event Details</h1>
+
+    <div th:if="${errorMessage}" data-testid="error-message" class="error" th:text="${errorMessage}"></div>
+
+    <form th:action="@{${formAction}}" th:object="${eventForm}" method="post" data-testid="event-form">
+        <label>
+            Title
+            <input type="text" th:field="*{title}" data-testid="event-title-input">
+            <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="error" data-testid="title-error"></span>
+        </label>
+        <label>
+            Description
+            <textarea th:field="*{description}" data-testid="event-description-input"></textarea>
+            <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="error" data-testid="description-error"></span>
+        </label>
+        <label>
+            Date
+            <input type="date" th:field="*{eventDate}" data-testid="event-date-input">
+            <span th:if="${#fields.hasErrors('eventDate')}" th:errors="*{eventDate}" class="error" data-testid="date-error"></span>
+        </label>
+        <label>
+            Location
+            <input type="text" th:field="*{location}" data-testid="event-location-input">
+            <span th:if="${#fields.hasErrors('location')}" th:errors="*{location}" class="error" data-testid="location-error"></span>
+        </label>
+        <label>
+            Capacity
+            <input type="number" th:field="*{capacity}" data-testid="event-capacity-input">
+            <span th:if="${#fields.hasErrors('capacity')}" th:errors="*{capacity}" class="error" data-testid="capacity-error"></span>
+        </label>
+        <button type="submit" data-testid="event-form-submit">Save Event</button>
+    </form>
+</main>
+</body>
+</html>

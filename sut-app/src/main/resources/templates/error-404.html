@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Not Found - Igniters</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<main>
+    <h1 data-testid="not-found-heading">Page Not Found</h1>
+    <p>That event does not exist, or it may have been deleted.</p>
+    <a th:href="@{/events}" data-testid="back-to-events-link">Back to Events</a>
+</main>
+</body>
+</html>

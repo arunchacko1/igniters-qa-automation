@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${event.title} + ' - Igniters'">Event - Igniters</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+<main>
+    <div th:if="${errorMessage}" data-testid="error-message" class="error" th:text="${errorMessage}"></div>
+
+    <h1 data-testid="event-detail-title" th:text="${event.title}"></h1>
+    <p data-testid="event-detail-description" th:text="${event.description}"></p>
+    <ul>
+        <li>Date: <span data-testid="event-detail-date" th:text="${event.eventDate}"></span></li>
+        <li>Location: <span data-testid="event-detail-location" th:text="${event.location}"></span></li>
+        <li>Capacity: <span data-testid="event-detail-capacity" th:text="${event.capacity}"></span></li>
+        <li>Seats remaining: <span data-testid="event-detail-remaining" th:text="${event.remainingCapacity}"></span></li>
+    </ul>
+
+    <div th:unless="${isAdmin}">
+        <form th:if="${!isRegistered}" th:action="@{/events/{id}/register(id=${event.id})}" method="post">
+            <button type="submit" data-testid="register-button">Register</button>
+        </form>
+        <form th:if="${isRegistered}" th:action="@{/events/{id}/cancel(id=${event.id})}" method="post">
+            <button type="submit" class="secondary" data-testid="cancel-registration-button">Cancel Registration</button>
+        </form>
+    </div>
+
+    <div th:if="${isAdmin}">
+        <a th:href="@{/admin/events/{id}/edit(id=${event.id})}" class="button" data-testid="edit-event-link">Edit</a>
+        <form th:action="@{/admin/events/{id}/delete(id=${event.id})}" method="post" style="display:inline">
+            <button type="submit" class="danger" data-testid="delete-event-button">Delete</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

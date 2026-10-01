@@ -1,0 +1,121 @@
+/* Plain CSS by design — the spec asks to keep the frontend simple so the
+   test suites, not the styling, are the point of this project. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+  margin: 0;
+  background: #f5f6f8;
+  color: #1a1a1a;
+}
+
+header[data-testid="nav-bar"] {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #1f2a44;
+  color: white;
+}
+
+header[data-testid="nav-bar"] a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+main {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.auth-page {
+  max-width: 400px;
+  margin: 4rem auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+form label {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button, .button {
+  background: #2e6adf;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #999;
+}
+
+button.danger {
+  background: #c23b3b;
+}
+
+.error {
+  background: #fdecea;
+  color: #a61b1b;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.info {
+  background: #e7f3ff;
+  color: #1a4f7a;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.event-list {
+  list-style: none;
+  padding: 0;
+}
+
+.event-card {
+  background: white;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-card a {
+  font-weight: 600;
+  color: #1f2a44;
+  text-decoration: none;
+}
+
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.search-bar input {
+  margin-top: 0;
+}

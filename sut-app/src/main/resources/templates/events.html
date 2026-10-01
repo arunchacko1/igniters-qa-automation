@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Events - Igniters</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/nav :: nav}"></div>
+<main>
+    <h1>Upcoming Events</h1>
+
+    <form th:action="@{/events}" method="get" class="search-bar" data-testid="search-form">
+        <input type="text" name="q" th:value="${q}" placeholder="Search by title" data-testid="search-input">
+        <input type="date" name="date" th:value="${date}" data-testid="date-filter-input">
+        <button type="submit" data-testid="search-submit">Search</button>
+        <a th:href="@{/events}" class="button secondary" data-testid="clear-filters-link">Clear</a>
+    </form>
+
+    <p th:if="${#lists.isEmpty(events)}" data-testid="empty-state">No events match your search.</p>
+
+    <ul class="event-list" data-testid="event-list">
+        <li class="event-card" data-testid="event-item" th:each="event : ${events}">
+            <div>
+                <a th:href="@{/events/{id}(id=${event.id})}" th:text="${event.title}" data-testid="event-title-link"></a>
+                <div>
+                    <span th:text="${event.eventDate}" data-testid="event-date"></span>
+                    &middot;
+                    <span th:text="${event.location}" data-testid="event-location"></span>
+                </div>
+            </div>
+            <span th:text="${event.remainingCapacity} + ' seats left'" data-testid="event-remaining"></span>
+        </li>
+    </ul>
+</main>
+</body>
+</html>

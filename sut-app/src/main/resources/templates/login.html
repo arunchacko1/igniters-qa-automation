@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Log In - Igniters</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<main class="auth-page">
+    <h1>Igniters Event Registration</h1>
+
+    <!-- Spring Security's formLogin posts to /login itself with fields
+         named "username"/"password" by default; this page only renders. -->
+    <form th:action="@{/login}" method="post" data-testid="login-form">
+        <div th:if="${param.error}" data-testid="error-message" class="error">
+            Email or password is incorrect.
+        </div>
+        <div th:if="${param.logout}" data-testid="info-message" class="info">
+            You have been logged out.
+        </div>
+
+        <label>
+            Email
+            <input type="email" name="username" data-testid="login-email" required autocomplete="username">
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" data-testid="login-password" required autocomplete="current-password">
+        </label>
+        <button type="submit" data-testid="login-submit">Log In</button>
+    </form>
+</main>
+</body>
+</html>
