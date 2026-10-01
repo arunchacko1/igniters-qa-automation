@@ -7,7 +7,7 @@ target/
 node_modules/
 playwright-tests/test-results/
 playwright-tests/playwright-report/
-playwright-tests/.auth/
+playwright-tests/playwright/.auth/
 playwright-tests/blob-report/
 
 # Reports and artifacts
