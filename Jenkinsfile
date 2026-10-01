@@ -65,6 +65,7 @@ pipeline {
             steps {
                 sh './mvnw -f qa-tests/pom.xml -B test -Papi'
                 sh '''
+                    mkdir -p newman-report
                     npx --yes newman run postman/igniters-collection.json \
                         -e postman/igniters-environment.json \
                         --reporters cli,junit \

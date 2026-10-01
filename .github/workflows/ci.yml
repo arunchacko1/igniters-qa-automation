@@ -222,6 +222,7 @@ jobs:
           node-version: "20"
       - name: Run the collection with Newman
         run: |
+          mkdir -p newman-report
           npx --yes newman run postman/igniters-collection.json \
             -e postman/igniters-environment.json \
             --reporters cli,html \
