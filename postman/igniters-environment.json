@@ -1,0 +1,15 @@
+{
+  "id": "e1a1c2e0-1111-4a2b-9c3d-igniters0001",
+  "name": "Igniters Local",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api", "type": "default", "enabled": true },
+    { "key": "adminEmail", "value": "avery.admin@igniters.org", "type": "default", "enabled": true },
+    { "key": "memberEmail", "value": "jordan.member@igniters.org", "type": "default", "enabled": true },
+    { "key": "password", "value": "Passw0rd!", "type": "secret", "enabled": true },
+    { "key": "adminToken", "value": "", "type": "secret", "enabled": true },
+    { "key": "memberToken", "value": "", "type": "secret", "enabled": true },
+    { "key": "eventId", "value": "", "type": "default", "enabled": true },
+    { "key": "futureDate", "value": "", "type": "default", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}

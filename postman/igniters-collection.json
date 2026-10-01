@@ -1,0 +1,381 @@
+{
+  "info": {
+    "name": "Igniters Event Registration API",
+    "description": "Manual exploration + Newman-runnable collection for the SUT's REST API. Mirrors the endpoints covered by qa-tests/.../api, written independently so the two suites aren't just copies of each other (see docs/decisions.md #8).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('response has a token', () => pm.expect(body.token).to.be.a('string').and.not.empty);",
+                  "pm.test('role is ADMIN', () => pm.expect(body.role).to.eql('ADMIN'));",
+                  "pm.environment.set('adminToken', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login as Member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('role is MEMBER', () => pm.expect(body.role).to.eql('MEMBER'));",
+                  "pm.environment.set('memberToken', body.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{memberEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login with Wrong Password (negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('error code is INVALID_CREDENTIALS', () => pm.expect(pm.response.json().code).to.eql('INVALID_CREDENTIALS'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"definitely-wrong\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const future = new Date();",
+                  "future.setDate(future.getDate() + 10);",
+                  "pm.environment.set('futureDate', future.toISOString().split('T')[0]);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('response has a Location header', () => pm.response.to.have.header('Location'));",
+                  "const body = pm.response.json();",
+                  "pm.test('remainingCapacity equals capacity for a brand new event', () => pm.expect(body.remainingCapacity).to.eql(body.capacity));",
+                  "pm.environment.set('eventId', String(body.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Fundraiser\",\n  \"description\": \"Created by the Newman run.\",\n  \"eventDate\": \"{{futureDate}}\",\n  \"location\": \"Postman Hall\",\n  \"capacity\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/events", "host": ["{{baseUrl}}"], "path": ["events"] }
+          }
+        },
+        {
+          "name": "Create Event with Past Date (negative)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error code is EVENT_DATE_IN_PAST', () => pm.expect(pm.response.json().code).to.eql('EVENT_DATE_IN_PAST'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Should Fail\",\n  \"description\": \"Past date.\",\n  \"eventDate\": \"2000-01-01\",\n  \"location\": \"Nowhere\",\n  \"capacity\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/events", "host": ["{{baseUrl}}"], "path": ["events"] }
+          }
+        },
+        {
+          "name": "Get Event By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('id matches the created event', () => pm.expect(String(body.id)).to.eql(pm.environment.get('eventId')));",
+                  "pm.test('response has all expected fields', () => {",
+                  "  ['id','title','description','eventDate','location','capacity','remainingCapacity'].forEach(f => pm.expect(body).to.have.property(f));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        },
+        {
+          "name": "List Events (search by title)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('every result title contains the search term', () => {",
+                  "  body.forEach(e => pm.expect(e.title.toLowerCase()).to.include('postman'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/events?q=postman",
+              "host": ["{{baseUrl}}"],
+              "path": ["events"],
+              "query": [{ "key": "q", "value": "postman" }]
+            }
+          }
+        },
+        {
+          "name": "Update Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('title was updated', () => pm.expect(pm.response.json().title).to.eql('Postman Fundraiser (Updated)'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Fundraiser (Updated)\",\n  \"description\": \"Updated by the Newman run.\",\n  \"eventDate\": \"{{futureDate}}\",\n  \"location\": \"Postman Hall\",\n  \"capacity\": 2\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registrations",
+      "item": [
+        {
+          "name": "Register for Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('registration references the created event', () => pm.expect(String(pm.response.json().eventId)).to.eql(pm.environment.get('eventId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"]
+            }
+          }
+        },
+        {
+          "name": "Register Again (negative - duplicate)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 409', () => pm.response.to.have.status(409));",
+                  "pm.test('error code is ALREADY_REGISTERED', () => pm.expect(pm.response.json().code).to.eql('ALREADY_REGISTERED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"]
+            }
+          }
+        },
+        {
+          "name": "Get My Registrations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('includes the event just registered for', () => {",
+                  "  pm.expect(body.some(r => String(r.eventId) === pm.environment.get('eventId'))).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": { "raw": "{{baseUrl}}/me/registrations", "host": ["{{baseUrl}}"], "path": ["me", "registrations"] }
+          }
+        },
+        {
+          "name": "Cancel Registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('status is 204', () => pm.response.to.have.status(204));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Again (negative - not registered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 404', () => pm.response.to.have.status(404));",
+                  "pm.test('error code is REGISTRATION_NOT_FOUND', () => pm.expect(pm.response.json().code).to.eql('REGISTRATION_NOT_FOUND'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{memberToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/events/{{eventId}}/registrations",
+              "host": ["{{baseUrl}}"],
+              "path": ["events", "{{eventId}}", "registrations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('status is 204', () => pm.response.to.have.status(204));"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        },
+        {
+          "name": "Get Deleted Event (negative - 404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('status is 404', () => pm.response.to.have.status(404));"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["events", "{{eventId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}
