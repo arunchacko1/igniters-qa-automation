@@ -1,0 +1,234 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  schedule:
+    # Nightly regression run, 06:00 UTC.
+    - cron: "0 6 * * *"
+
+env:
+  POSTGRES_DB: igniters_qa
+  POSTGRES_USER: igniters
+  POSTGRES_PASSWORD: ci-password
+  QA_DEFECTS_ENABLED: "false"
+  BASE_URL: http://localhost:8080
+  API_BASE_URL: http://localhost:8080/api
+  DB_HOST: localhost
+  DB_PORT: "5432"
+  SELENIUM_HEADLESS: "true"
+
+jobs:
+  build:
+    name: Build SUT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Package the SUT jar
+        run: ./mvnw -f sut-app/pom.xml -q -B package -DskipTests
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sut-jar
+          path: sut-app/target/sut-app.jar
+          retention-days: 7
+
+  smoke:
+    name: Smoke suite (every push)
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/download-artifact@v4
+        with:
+          name: sut-jar
+          path: sut-app/target
+      - name: Start the SUT
+        run: |
+          java -jar sut-app/target/sut-app.jar &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/login > /dev/null && exit 0
+            sleep 2
+          done
+          echo "SUT did not start in time" && exit 1
+      - name: Run smoke tests
+        run: ./mvnw -f qa-tests/pom.xml -B test -Psmoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-surefire-reports
+          path: |
+            qa-tests/target/surefire-reports
+            qa-tests/target/screenshots
+
+  regression:
+    name: Full regression (PRs + nightly)
+    needs: build
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/download-artifact@v4
+        with:
+          name: sut-jar
+          path: sut-app/target
+      - name: Start the SUT
+        run: |
+          java -jar sut-app/target/sut-app.jar &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/login > /dev/null && exit 0
+            sleep 2
+          done
+          echo "SUT did not start in time" && exit 1
+      # Three separate Maven calls, not one combined profile list: Maven
+      # profiles that each redefine the same plugin's <configuration> don't
+      # merge, they replace — running them one at a time is what actually
+      # guarantees UI regression, every API test, and every DB test all run.
+      - name: Run UI smoke + regression tagged tests
+        run: ./mvnw -f qa-tests/pom.xml -B test -Pregression
+      - name: Run the full API suite
+        run: ./mvnw -f qa-tests/pom.xml -B test -Papi
+      - name: Run the full DB suite
+        run: ./mvnw -f qa-tests/pom.xml -B test -Pdb
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-surefire-reports
+          path: |
+            qa-tests/target/surefire-reports
+            qa-tests/target/screenshots
+
+  playwright:
+    name: Playwright suite
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/download-artifact@v4
+        with:
+          name: sut-jar
+          path: sut-app/target
+      - name: Start the SUT
+        run: |
+          java -jar sut-app/target/sut-app.jar &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/login > /dev/null && exit 0
+            sleep 2
+          done
+          echo "SUT did not start in time" && exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: playwright-tests/package-lock.json
+      - name: Install dependencies and browsers
+        working-directory: playwright-tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run Playwright tests
+        working-directory: playwright-tests
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-tests/playwright-report
+          retention-days: 7
+
+  newman:
+    name: Postman collection (Newman)
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/download-artifact@v4
+        with:
+          name: sut-jar
+          path: sut-app/target
+      - name: Start the SUT
+        run: |
+          java -jar sut-app/target/sut-app.jar &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8080/login > /dev/null && exit 0
+            sleep 2
+          done
+          echo "SUT did not start in time" && exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run the collection with Newman
+        run: |
+          npx --yes newman run postman/igniters-collection.json \
+            -e postman/igniters-environment.json \
+            --reporters cli,html \
+            --reporter-html-export newman-report/report.html
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: newman-report
+          path: newman-report
+          retention-days: 7
