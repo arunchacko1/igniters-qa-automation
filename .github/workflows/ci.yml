@@ -223,10 +223,11 @@ jobs:
       - name: Run the collection with Newman
         run: |
           mkdir -p newman-report
-          npx --yes newman run postman/igniters-collection.json \
+          npx --yes --package newman --package newman-reporter-htmlextra -- \
+            newman run postman/igniters-collection.json \
             -e postman/igniters-environment.json \
-            --reporters cli,html \
-            --reporter-html-export newman-report/report.html
+            --reporters cli,htmlextra \
+            --reporter-htmlextra-export newman-report/report.html
       - uses: actions/upload-artifact@v4
         if: always()
         with:
